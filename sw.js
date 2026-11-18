@@ -3,12 +3,13 @@
    hashes and report generator are entirely local, so offline is a real state and
    not a degraded one. The recon probe obviously needs a network and says so. */
 
-const CACHE = 'apex-sec-v1';
+const CACHE = 'apex-sec-v2';
 
 const SHELL = [
   './',
   'index.html',
   'styles.css',
+  'core.js',
   'app.js',
   'manifest.webmanifest',
   'icons/icon-192.png',
