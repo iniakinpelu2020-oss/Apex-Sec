@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apex-Sec</title>
+<meta name="description" content="Apex-Sec — recon notes, encoders, hash tooling and bug bounty reporting in one offline-capable console.">
+<meta name="theme-color" content="#0b0e11">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="scanlines" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">◤</span>
+    <div>
+      <h1>APEX<span>-SEC</span></h1>
+      <p class="tagline">security console</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="status-dot" id="netStatus" title="Network status"><i></i><span id="netLabel">online</span></span>
+    <button class="ghost" id="installBtn" hidden>Install</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Modules">
+  <button role="tab" class="tab active" data-panel="recon" aria-selected="true"><span class="tab-key">1</span> Recon</button>
+  <button role="tab" class="tab" data-panel="payload" aria-selected="false"><span class="tab-key">2</span> Payload</button>
+  <button role="tab" class="tab" data-panel="report" aria-selected="false"><span class="tab-key">3</span> Report</button>
+  <button role="tab" class="tab" data-panel="toolset" aria-selected="false"><span class="tab-key">4</span> Toolset</button>
+</nav>
+
+<main>
+  <!-- ===================== RECON ===================== -->
+  <section class="panel active" id="panel-recon" role="tabpanel" aria-labelledby="tab-recon">
+    <div class="panel-head">
+      <h2>Apex Recon</h2>
+      <p class="muted">Target intake, reachability probes and response header inspection.</p>
+    </div>
+
+    <div class="card">
+      <label for="target">Target</label>
+      <div class="row">
+        <input id="target" type="text" spellcheck="false" autocomplete="off" placeholder="example.com:443 or https://example.com/path" inputmode="url">
+        <button class="primary" id="probeBtn">Probe</button>
+      </div>
+      <p class="hint" id="targetHint">Accepts a bare host, host:port, or a full URL.</p>
+    </div>
+
+    <div class="card" id="probeCard" hidden>
+      <div class="card-head">
+        <h3>Probe result</h3>
+        <span class="badge" id="probeBadge">—</span>
+      </div>
+      <dl class="kv" id="probeOut"></dl>
+      <p class="hint" id="probeNote"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Response headers</h3>
+        <div class="btn-row">
+          <button class="mini" id="copyCurl" type="button">Copy curl</button>
+          <button class="mini" id="parseHeaders" type="button">Parse pasted</button>
+        </div>
+      </div>
+      <textarea id="headerInput" rows="5" spellcheck="false" placeholder="Paste raw response headers here, e.g.
+
+HTTP/2 200
+content-type: text/html
+strict-transport-security: max-age=63072000
+server: cloudflare"></textarea>
+      <div id="headerReport" class="header-report" hidden></div>
+    </div>
+
+    <div class="card portbox">
+      <div class="card-head">
+        <h3>Port checking</h3>
+        <span class="badge warn">browser limits apply</span>
+      </div>
+      <p class="muted small">
+        A browser cannot open raw TCP sockets, so no web page can port-scan a host.
+        Anything claiming otherwise is guessing. This console probes what a browser
+        can actually see (HTTPS reachability and timing) and hands you the exact
+        command to do the real scan from a shell.
+      </p>
+      <div class="row wrap">
+        <input id="portList" type="text" spellcheck="false" value="22,80,443,3000,5432,6379,8080,8443" aria-label="Ports">
+        <button class="mini" id="genNmap" type="button">Generate nmap command</button>
+      </div>
+      <pre class="code" id="nmapOut" hidden></pre>
+      <div class="btn-row" id="nmapActions" hidden>
+        <button class="mini" data-copy="nmapOut" type="button">Copy command</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PAYLOAD ===================== -->
+  <section class="panel" id="panel-payload" role="tabpanel" aria-labelledby="tab-payload">
+    <div class="panel-head">
+      <h2>Apex Payload &amp; Encoder</h2>
+      <p class="muted">Everything runs locally in this tab. Nothing is sent anywhere.</p>
+    </div>
+
+    <div class="card">
+      <label for="payloadIn">Input</label>
+      <textarea id="payloadIn" rows="6" spellcheck="false" placeholder="Paste text here…">admin' OR 1=1--</textarea>
+      <div class="btn-row wrap">
+        <button class="mini" data-transform="b64enc">Base64 encode</button>
+        <button class="mini" data-transform="b64dec">Base64 decode</button>
+        <button class="mini" data-transform="b64url">URL-safe Base64</button>
+        <button class="mini" data-transform="urlenc">URL encode</button>
+        <button class="mini" data-transform="urldec">URL decode</button>
+        <button class="mini" data-transform="hex">Hex</button>
+        <button class="mini" data-transform="reverse">Reverse</button>
+        <button class="mini" data-transform="clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Output</h3>
+        <button class="mini" data-copy="payloadOut" type="button">Copy</button>
+      </div>
+      <pre class="code" id="payloadOut" aria-live="polite"></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Hashes</h3>
+        <button class="mini" id="hashBtn" type="button">Generate</button>
+      </div>
+      <div class="hash-grid" id="hashGrid"></div>
+      <p class="hint">SHA family uses WebCrypto. MD5 is implemented locally because WebCrypto does not provide it. Not for password storage.</p>
+    </div>
+
+    <div class="card">
+      <h3>Payload notes</h3>
+      <div class="btn-row wrap">
+        <button class="mini" data-snippet="sqli">SQLi</button>
+        <button class="mini" data-snippet="xss">XSS</button>
+        <button class="mini" data-snippet="traversal">Path traversal</button>
+        <button class="mini" data-snippet="ssrf">SSRF</button>
+        <button class="mini" data-snippet="redirect">Open redirect</button>
+      </div>
+      <pre class="code" id="snippetOut" hidden></pre>
+      <p class="hint">Classic test strings for authorised testing only. Sending these at a system you do not own is a crime in most jurisdictions.</p>
+    </div>
+  </section>
+
+  <!-- ===================== REPORT ===================== -->
+  <section class="panel" id="panel-report" role="tabpanel" aria-labelledby="tab-report">
+    <div class="panel-head">
+      <h2>Apex Bug Bounty Reporter</h2>
+      <p class="muted">Fill the fields, get a triager-ready markdown report.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Finding</h3>
+        <div class="field"><label for="rTitle">Title</label><input id="rTitle" placeholder="Stored XSS in profile bio"></div>
+        <div class="field"><label for="rTarget">Asset / host</label><input id="rTarget" placeholder="https://app.example.com"></div>
+        <div class="row">
+          <div class="field"><label for="rSeverity">Severity</label>
+            <select id="rSeverity">
+              <option>Critical</option><option selected>High</option><option>Medium</option><option>Low</option><option>Informational</option>
+            </select>
+          </div>
+          <div class="field"><label for="rCvss">CVSS 3.1</label><input id="rCvss" placeholder="7.3"></div>
+        </div>
+        <div class="field"><label for="rEndpoint">Vulnerable endpoint</label><input id="rEndpoint" placeholder="POST /api/v1/profile/update"></div>
+        <div class="field"><label for="rHeaders">Request headers / request line</label>
+          <textarea id="rHeaders" rows="4" spellcheck="false" placeholder="POST /api/v1/profile/update HTTP/1.1&#10;Host: app.example.com&#10;Authorization: Bearer &lt;redacted&gt;&#10;Content-Type: application/json"></textarea>
+        </div>
+        <div class="field"><label for="rSteps">Proof of concept (one step per line)</label>
+          <textarea id="rSteps" rows="4" spellcheck="false" placeholder="Sign in as a low-privilege user&#10;Set bio to &lt;img src=x onerror=alert(document.domain)&gt;&#10;Visit /profile/u/123 and the script executes"></textarea>
+        </div>
+        <div class="field"><label for="rImpact">Impact</label>
+          <textarea id="rImpact" rows="3" placeholder="An attacker can execute script in any visitor's session, including admins."></textarea>
+        </div>
+        <div class="field"><label for="rFix">Remediation</label>
+          <textarea id="rFix" rows="3" placeholder="Encode output at render time and reject script tags server-side."></textarea>
+        </div>
+      </div>
+
+      <div class="card sticky">
+        <div class="card-head">
+          <h3>Markdown</h3>
+          <div class="btn-row">
+            <button class="mini" id="copyReport" type="button">Copy</button>
+            <button class="mini" id="downloadReport" type="button">Download .md</button>
+          </div>
+        </div>
+        <pre class="code tall" id="reportOut" aria-live="polite"></pre>
+        <p class="hint">Saved automatically in this browser, so a refresh does not lose it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TOOLSET ===================== -->
+  <section class="panel" id="panel-toolset" role="tabpanel" aria-labelledby="tab-toolset">
+    <div class="panel-head">
+      <h2>Toolset Directory</h2>
+      <p class="muted">The core modules this console feeds into.</p>
+    </div>
+    <div class="tool-grid" id="toolGrid"></div>
+    <p class="hint">Copy a command, run it locally. Nothing here shells out on your behalf — a web page cannot.</p>
+  </section>
+</main>
+
+<footer class="footer">
+  <span class="blink">▌</span> Apex-Sec · offline-capable · use only on systems you are authorised to test
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>
