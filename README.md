@@ -6,7 +6,8 @@ framework, no build step, no server. Four modules in one installable PWA.
 ```
 index.html            shell and markup
 styles.css            charcoal / green / cyan theme
-app.js                all logic
+core.js               helpers, tab routing, network state (loaded first)
+app.js                module logic: recon, encoders, hashes, report, toolset
 manifest.webmanifest  PWA manifest
 sw.js                 offline service worker
 icons/                generated PNG icons (any + maskable)
@@ -43,8 +44,8 @@ the two things that are real:
   gives the status, the real headers and a timing. An opaque response still
   proves DNS, TCP and TLS worked, because the request had to complete to return
   even an opaque result.
-- It hands you the exact `nmap`, `whatweb` and `curl` command for the ports you
-  listed, so the real scan happens somewhere that can actually open sockets.
+- It hands you the exact `nmap` and `curl` command for the ports you listed, so
+  the real scan happens somewhere that can actually open sockets.
 
 Header inspection is honest in the same way: if the target does not send
 `Access-Control-Allow-Origin`, the browser hides the headers and the UI explains
